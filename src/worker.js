@@ -1,5 +1,5 @@
 import { buildPushHTTPRequest } from '@pushforge/builder';
-import { computeDebt, computeStreak, todayTotals, day, warsawHour } from './logic.js';
+import { computeDebt, computeStreak, todayTotals, day, warsawHour, sum } from './logic.js';
 
 const json = (data, status = 200) => Response.json(data, { status });
 const nowTs = () => Math.floor(Date.now() / 1000);
@@ -18,12 +18,15 @@ const delState = (env, key) => env.DB.prepare('DELETE FROM state WHERE key = ?')
 const allEntries = async env =>
   (await env.DB.prepare('SELECT * FROM entries ORDER BY start_ts DESC').all()).results;
 
+// OpenDota's `date` = days back; cover everything since START_TS so missed days are caught up
+const daysSinceStart = env => Math.ceil((nowTs() - Number(env.START_TS)) / 86400) + 1;
+
 async function syncMatches(env) {
   const base = `https://api.opendota.com/api/players/${env.STEAM_ID}`;
   // asks OpenDota to pull fresh history; new matches show up on a later run
   const headers = { 'User-Agent': 'dota-polski (+https://github.com/a1exymoroz/dota-polski)' };
   await fetch(`${base}/refresh`, { method: 'POST', headers }).catch(() => {});
-  const r = await fetch(`${base}/matches?date=2`, { headers });
+  const r = await fetch(`${base}/matches?date=${daysSinceStart(env)}`, { headers });
   if (!r.ok) throw new Error(`OpenDota ${r.status}: ${(await r.text()).slice(0, 200)}`);
   return insertMatches(env, await r.json());
 }
@@ -81,6 +84,10 @@ async function api(req, env, path) {
       timerStart: Number(await getState(env, 'timer_start')) || null,
       debtLimit: Number(env.DEBT_LIMIT),
       steamId: env.STEAM_ID,
+      startTs: Number(env.START_TS),
+      syncDays: daysSinceStart(env),
+      dotaTotal: sum(entries, 'dota'),
+      studyTotal: sum(entries, 'study'),
       recent: entries.slice(0, 20),
     });
   }

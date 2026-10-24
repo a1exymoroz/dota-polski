@@ -6,7 +6,7 @@ export const day = ts => new Date(ts * 1000).toLocaleDateString('sv-SE', { timeZ
 export const warsawHour = ts =>
   Number(new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', hourCycle: 'h23' }).format(ts * 1000));
 
-const sum = (entries, kind) => entries.filter(e => e.kind === kind).reduce((s, e) => s + e.minutes, 0);
+export const sum = (entries, kind) => entries.filter(e => e.kind === kind).reduce((s, e) => s + e.minutes, 0);
 
 // > 0: owe Polish minutes, < 0: banked credit
 export const computeDebt = entries => sum(entries, 'dota') - sum(entries, 'study');

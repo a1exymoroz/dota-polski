@@ -37,6 +37,8 @@ function render() {
   $('dotaToday').textContent = Math.round(s.dotaToday);
   $('studyToday').textContent = Math.round(s.studyToday);
   $('streak').textContent = s.streak;
+  const since = new Date(s.startTs * 1000).toLocaleDateString('ru', { day: 'numeric', month: 'short' });
+  $('total').textContent = `Всего с ${since}: дота ${fmt(s.dotaTotal)} · польский ${fmt(s.studyTotal)}`;
 
   // timer runs from the server-stored start, so closing the app doesn't reset it
   clearInterval(tick);
@@ -75,8 +77,8 @@ async function act(fn) {
 $('timer').onclick = () => act(() => api(status?.timerStart ? '/api/timer/stop' : '/api/timer/start', 'POST'));
 // fetched from the phone: its own IP has OpenDota quota, Cloudflare's shared IPs often don't
 async function syncFromPhone() {
-  const steamId = status?.steamId ?? (await api('/api/status')).steamId;
-  const r = await fetch(`https://api.opendota.com/api/players/${steamId}/matches?date=2`);
+  const { steamId, syncDays } = status ?? (await api('/api/status'));
+  const r = await fetch(`https://api.opendota.com/api/players/${steamId}/matches?date=${syncDays}`);
   if (!r.ok) throw new Error(`OpenDota ${r.status}`);
   await api('/api/matches', 'POST', await r.json());
 }
