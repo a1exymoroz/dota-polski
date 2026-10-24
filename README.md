@@ -1,49 +1,49 @@
 # Dota → Polski 🇵🇱
 
-Учу польский столько же, сколько играю в Доту. Минута доты = минута польского.
+Study Polish for as long as you play Dota 2. One minute of Dota = one minute of Polish.
 
-- Матчи берутся из [OpenDota](https://www.opendota.com): телефон загружает их при каждом открытии приложения, сервер пробует каждые 15 минут (общие IP Cloudflare часто упираются в дневной лимит OpenDota).
-- Таймер «Старт/Стоп» для занятий польским (не сбрасывается, если закрыть приложение).
-- Долг, серия дней 🔥, ручное добавление доты, удаление ошибочных записей.
-- Push: после новых матчей, вечером (20:00 по Варшаве), если долг не закрыт, и предупреждение, если долг больше `DEBT_LIMIT`.
+- Matches come from [OpenDota](https://www.opendota.com): the phone fetches them every time the app opens, and the server tries every 15 minutes (Cloudflare's shared IPs often hit OpenDota's daily limit).
+- Start/Stop timer for Polish study sessions (keeps running if you close the app).
+- Debt, day streak 🔥, manual Dota entries, deleting wrong entries.
+- Push notifications: after new matches, in the evening (20:00 Warsaw time) if the debt isn't paid off, and a warning when the debt exceeds `DEBT_LIMIT`.
 
-Стек: Cloudflare Worker (фронт + API + cron) + D1 (SQLite) + PWA. Бесплатный тариф Cloudflare.
+Stack: Cloudflare Worker (frontend + API + cron) + D1 (SQLite) + PWA. Runs on Cloudflare's free plan.
 
-## Подготовка
+## Setup
 
-1. В Доте: *Настройки → Сообщество → «Открыть доступ к данным матчей»* (иначе OpenDota не видит матчи).
-2. Свой Steam32 ID — число в URL профиля на opendota.com.
-3. Аккаунт Cloudflare (бесплатный).
+1. In Dota: *Settings → Social → "Expose Public Match Data"* (otherwise OpenDota can't see your matches).
+2. Your Steam32 ID — the number in your opendota.com profile URL.
+3. A Cloudflare account (free).
 
-## Деплой
+## Deploy
 
 ```bash
 npm install
 npx wrangler login
-npx wrangler d1 create dota-polski        # вставь database_id в wrangler.toml
+npx wrangler d1 create dota-polski        # put database_id into wrangler.toml
 npx wrangler d1 execute dota-polski --remote --file schema.sql
-npx @pushforge/builder vapid              # публичный ключ -> VAPID_PUBLIC в public/app.js
-npx wrangler secret put API_TOKEN         # любой длинный случайный пароль
+npx @pushforge/builder vapid              # public key -> VAPID_PUBLIC in public/app.js
+npx wrangler secret put API_TOKEN         # any long random password
 npx wrangler secret put STEAM_ID
-npx wrangler secret put VAPID_PRIVATE     # приватный JWK из команды vapid, одной строкой
+npx wrangler secret put VAPID_PRIVATE     # private JWK from the vapid command, on one line
 npx wrangler deploy
 ```
 
-Матчи раньше `START_TS` (unix-время в `wrangler.toml`) не учитываются.
+Matches before `START_TS` (unix time in `wrangler.toml`) are ignored.
 
-## Установка на iPhone (iOS 16.4+)
+## Install on iPhone (iOS 16.4+)
 
-1. Открой URL воркера в **Safari** → «Поделиться» → «На экран „Домой“».
-2. Открой приложение **с иконки**, введи `API_TOKEN`.
-3. Нажми «🔔 уведомления» → разреши. Придёт тестовое уведомление.
+1. Open the worker URL in **Safari** → Share → "Add to Home Screen".
+2. Open the app **from the icon** and enter your `API_TOKEN`.
+3. Tap "🔔 уведомления" (notifications) → allow. A test notification will arrive.
 
-## Локально
+## Local development
 
 ```bash
-cp .dev.vars.example .dev.vars   # заполни значения
+cp .dev.vars.example .dev.vars   # fill in the values
 npx wrangler d1 execute dota-polski --local --file schema.sql
 npx wrangler dev --test-scheduled  # http://localhost:8787, cron: /__scheduled
 npm test
 ```
 
-На Windows при очень длинном пути к папке локальный D1 падает с `SQLITE_CANTOPEN` — положи проект в короткий путь.
+On Windows, local D1 fails with `SQLITE_CANTOPEN` when the project path is very long — move the project to a short path.
