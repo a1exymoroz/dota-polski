@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL CHECK (kind IN ('dota', 'study')),
+  start_ts INTEGER NOT NULL,
+  minutes REAL NOT NULL,
+  match_id INTEGER UNIQUE,
+  note TEXT
+);
+
+CREATE TABLE IF NOT EXISTS state (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);

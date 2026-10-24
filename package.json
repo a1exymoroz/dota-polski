@@ -1,0 +1,16 @@
+{
+  "name": "dota-polski",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "wrangler": "^4.152.0"
+  },
+  "dependencies": {
+    "@pushforge/builder": "^2.0.5"
+  }
+}

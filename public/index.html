@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#111318">
+  <title>Dota → Polski</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <p class="label">Долг польского</p>
+    <h1 id="debt">…</h1>
+    <p id="block" class="block" hidden>🙅 Дота на паузе — сначала польский</p>
+
+    <button id="timer" class="timer">Старт</button>
+    <p id="elapsed" class="elapsed" hidden></p>
+
+    <div class="stats">
+      <div><span id="dotaToday">0</span><small>дота сегодня</small></div>
+      <div><span id="studyToday">0</span><small>польский сегодня</small></div>
+      <div><span id="streak">0</span><small>🔥 серия дней</small></div>
+    </div>
+
+    <div class="actions">
+      <button id="manual">+ дота вручную</button>
+      <button id="sync">↻ матчи</button>
+      <button id="push">🔔 уведомления</button>
+    </div>
+
+    <ul id="recent"></ul>
+    <p id="error" class="error" hidden></p>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
