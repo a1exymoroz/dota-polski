@@ -1,6 +1,6 @@
 /* Achromatic ledger (tasteskill, seed 148845123): ink chrome, the one hue (Polish crimson) only on Polish data */
 :root {
-  --ground: #f8f8f8; --surface: #ffffff; --raised: #eeeeee; --border: #e6e6e6; --rule: #f0f0f0;
+  --ground: #f6f6f6; /* matches the paper of bg.webp */ --surface: #ffffff; --raised: #eeeeee; --border: #e6e6e6; --rule: #f0f0f0;
   --control: #d4d4d4; --text: #0a0a0a; --muted: #6b6b6b; --primary: #141414;
   --polish: #c8102e; /* flag crimson, 5.9:1 on white */
   --negative: #c4242a; --pill-negative-bg: #ffedea; --pill-negative-ink: #831c1e;
@@ -11,6 +11,16 @@
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--ground); color: var(--text); font: 14px/20px var(--font); }
+/* wycinanki backdrop, fixed behind the content (iOS ignores background-attachment: fixed) */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  opacity: .6; /* keeps grey labels over the motifs at 4.5:1 */
+  background: url(/bg.webp) center bottom / cover no-repeat;
+}
+@media (min-aspect-ratio: 3/4) {
+  /* wide screens: tile the portrait art along the bottom instead of blowing it up */
+  body::before { background-size: auto 100%; background-repeat: repeat-x; }
+}
 button, input { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .num { font-variant-numeric: tabular-nums; }
