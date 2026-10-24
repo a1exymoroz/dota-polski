@@ -4,8 +4,8 @@ import { computeDebt, computeStreak, todayTotals, day, warsawHour, sum } from '.
 const json = (data, status = 200) => Response.json(data, { status });
 const nowTs = () => Math.floor(Date.now() / 1000);
 const fmt = m => {
-  const r = Math.round(Math.abs(m)), h = Math.floor(r / 60);
-  return (h ? `${h} ч ` : '') + `${r % 60} мин`;
+  const r = Math.round(Math.abs(m)), h = Math.floor(r / 60), min = r % 60;
+  return [h && `${h} ч`, (min || !h) && `${min} мин`].filter(Boolean).join(' ');
 };
 
 const getState = async (env, key) =>

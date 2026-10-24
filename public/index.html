@@ -4,37 +4,72 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#111318">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f8f8f8">
   <title>Dota → Polski</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <header class="bar">
+    <span class="brand" translate="no">
+      <svg class="mark" viewBox="0 0 20 20" aria-hidden="true"><rect width="20" height="10" fill="#fff"/><rect y="10" width="20" height="10" fill="var(--polish)"/><rect x=".5" y=".5" width="19" height="19" fill="none" stroke="var(--control)"/></svg>
+      Dota → Polski
+    </span>
+    <button id="push" class="ghost" type="button">Уведомления</button>
+  </header>
+
   <main>
-    <p class="label">Долг польского</p>
-    <h1 id="debt">…</h1>
-    <p id="total" class="label"></p>
-    <p id="block" class="block" hidden>🙅 Дота на паузе — сначала польский</p>
 
-    <button id="timer" class="timer">Старт</button>
-    <p id="elapsed" class="elapsed" hidden></p>
+    <div id="app" class="grid">
+      <section class="balance" aria-labelledby="title">
+        <h1 id="title">Долг польского</h1>
+        <p id="debt" class="debt num" aria-live="polite">—</p>
+        <p id="total" class="muted num"></p>
+        <p id="block" class="notice" hidden>Долг больше часа — сначала польский, потом катка</p>
 
-    <div class="stats">
-      <div><span id="dotaToday">0</span><small>дота сегодня</small></div>
-      <div><span id="studyToday">0</span><small>польский сегодня</small></div>
-      <div><span id="streak">0</span><small>🔥 серия дней</small></div>
+        <div class="track" aria-labelledby="trackLabel">
+          <div class="track-head">
+            <span>Отработано</span>
+            <span id="trackLabel" class="num"></span>
+          </div>
+          <div class="track-bar"><div id="trackFill" class="track-fill"></div></div>
+        </div>
+
+        <p id="elapsed" class="elapsed num" hidden aria-live="off"></p>
+        <button id="timer" class="primary timer" type="button">Начать польский</button>
+
+        <dl class="kpis">
+          <div><dt>Дота сегодня</dt><dd id="dotaToday" class="num">—</dd></div>
+          <div><dt>Польский сегодня</dt><dd id="studyToday" class="num">—</dd></div>
+          <div><dt>Серия</dt><dd id="streak" class="num">—</dd></div>
+        </dl>
+        <p id="error" class="error" role="alert" hidden></p>
+      </section>
+
+      <section class="panel ledger" aria-labelledby="ledgerTitle">
+        <div class="ledger-head">
+          <h2 id="ledgerTitle">Журнал</h2>
+          <div class="actions">
+            <button id="sync" class="ghost" type="button">Обновить</button>
+            <button id="manual" class="ghost" type="button">Добавить доту</button>
+          </div>
+        </div>
+        <ul id="recent"></ul>
+        <p id="empty" class="muted empty" hidden>Пока пусто: сыграй матч или начни занятие.</p>
+      </section>
     </div>
-
-    <div class="actions">
-      <button id="manual">+ дота вручную</button>
-      <button id="sync">↻ матчи</button>
-      <button id="push">🔔 уведомления</button>
-    </div>
-
-    <ul id="recent"></ul>
-    <p id="error" class="error" hidden></p>
+    <form id="login" class="panel login" hidden>
+      <h1>Вход</h1>
+      <p class="muted">Пароль задаётся на сервере (секрет API_TOKEN).</p>
+      <label for="tokenInput">Пароль приложения</label>
+      <input id="tokenInput" name="token" type="password" autocomplete="current-password" spellcheck="false" required>
+      <button class="primary" type="submit">Войти</button>
+    </form>
   </main>
   <script src="/app.js"></script>
 </body>
