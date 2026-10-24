@@ -8,13 +8,15 @@ directory = "./public"
 [[d1_databases]]
 binding = "DB"
 database_name = "dota-polski"
-database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+database_id = "8c9444ea-f2c6-4d45-a7f6-b53cdc168f08"
 
 [triggers]
 crons = ["*/15 * * * *"]
 
 [vars]
 DEBT_LIMIT = "60"
+# matches before this unix time are ignored (2026-10-24 00:00 Warsaw)
+START_TS = "1792792800"
 CONTACT = "https://github.com/a1exymoroz/dota-polski"
 
 # Secrets (wrangler secret put): API_TOKEN, STEAM_ID, VAPID_PRIVATE

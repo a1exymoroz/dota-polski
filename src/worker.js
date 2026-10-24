@@ -21,10 +21,19 @@ const allEntries = async env =>
 async function syncMatches(env) {
   const base = `https://api.opendota.com/api/players/${env.STEAM_ID}`;
   // asks OpenDota to pull fresh history; new matches show up on a later run
-  await fetch(`${base}/refresh`, { method: 'POST' }).catch(() => {});
-  const r = await fetch(`${base}/matches?date=2`);
-  if (!r.ok) throw new Error(`OpenDota ${r.status}`);
-  const matches = await r.json();
+  const headers = { 'User-Agent': 'dota-polski (+https://github.com/a1exymoroz/dota-polski)' };
+  await fetch(`${base}/refresh`, { method: 'POST', headers }).catch(() => {});
+  const r = await fetch(`${base}/matches?date=2`, { headers });
+  if (!r.ok) throw new Error(`OpenDota ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  return insertMatches(env, await r.json());
+}
+
+// matches come from OpenDota via the cron or via the phone (Cloudflare's shared IPs often hit OpenDota's daily limit)
+async function insertMatches(env, matches) {
+  if (!Array.isArray(matches)) throw new Error('matches must be an array');
+  matches = matches.filter(m =>
+    [m.match_id, m.start_time, m.duration].every(Number.isInteger) &&
+    m.duration > 0 && m.duration < 4 * 3600 && m.start_time >= Number(env.START_TS));
   if (!matches.length) return 0;
   const insert = env.DB.prepare(
     "INSERT OR IGNORE INTO entries (kind, start_ts, minutes, match_id) VALUES ('dota', ?, ?, ?)");
@@ -46,7 +55,7 @@ async function sendPush(env, title, body) {
 }
 
 async function cron(env) {
-  const added = await syncMatches(env);
+  const added = await syncMatches(env).catch(() => 0); // rate-limited: the phone syncs on open instead
   const now = nowTs();
   const debt = computeDebt(await allEntries(env));
   const limit = Number(env.DEBT_LIMIT);
@@ -71,10 +80,12 @@ async function api(req, env, path) {
       streak: computeStreak(entries, now),
       timerStart: Number(await getState(env, 'timer_start')) || null,
       debtLimit: Number(env.DEBT_LIMIT),
+      steamId: env.STEAM_ID,
       recent: entries.slice(0, 20),
     });
   }
   if (route === 'POST /api/sync') return json({ added: await syncMatches(env) });
+  if (route === 'POST /api/matches') return json({ added: await insertMatches(env, await req.json()) });
   if (route === 'POST /api/timer/start') {
     // OR IGNORE: a second tap doesn't reset a running timer
     await env.DB.prepare("INSERT OR IGNORE INTO state (key, value) VALUES ('timer_start', ?)").bind(String(now)).run();

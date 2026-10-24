@@ -73,7 +73,15 @@ async function act(fn) {
 }
 
 $('timer').onclick = () => act(() => api(status?.timerStart ? '/api/timer/stop' : '/api/timer/start', 'POST'));
-$('sync').onclick = () => act(() => api('/api/sync', 'POST'));
+// fetched from the phone: its own IP has OpenDota quota, Cloudflare's shared IPs often don't
+async function syncFromPhone() {
+  const steamId = status?.steamId ?? (await api('/api/status')).steamId;
+  const r = await fetch(`https://api.opendota.com/api/players/${steamId}/matches?date=2`);
+  if (!r.ok) throw new Error(`OpenDota ${r.status}`);
+  await api('/api/matches', 'POST', await r.json());
+}
+
+$('sync').onclick = () => act(syncFromPhone);
 $('manual').onclick = () => {
   const minutes = Number(prompt('Сколько минут играл?'));
   if (minutes) act(() => api('/api/dota/manual', 'POST', { minutes }));
@@ -90,5 +98,7 @@ $('push').onclick = () => act(async () => {
 });
 
 navigator.serviceWorker?.register('/sw.js');
-document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && act());
-act(() => api('/api/sync', 'POST').catch(() => {})); // OpenDota being down shouldn't block the screen
+// OpenDota being down shouldn't block the screen
+const openSync = () => act(() => syncFromPhone().catch(() => {}));
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && openSync());
+openSync();
