@@ -40,8 +40,19 @@
           <div class="track-bar"><div id="trackFill" class="track-fill"></div></div>
         </div>
 
-        <p id="elapsed" class="elapsed num" hidden aria-live="off"></p>
-        <button id="timer" class="primary timer" type="button">Начать польский</button>
+        <fieldset id="cats" class="cats">
+          <legend>Чем занимаешься</legend>
+          <label><input type="radio" name="cat" value="reading"><span>Читаю</span></label>
+          <label><input type="radio" name="cat" value="watching"><span>Сериал или фильм</span></label>
+          <label><input type="radio" name="cat" value="course" checked><span>Курс</span></label>
+          <label><input type="radio" name="cat" value="duolingo"><span translate="no">Duolingo</span></label>
+        </fieldset>
+
+        <p id="session" class="session" hidden><span id="sessionCat"></span><span id="elapsed" class="elapsed num"></span></p>
+        <div class="timer-row">
+          <button id="pause" class="secondary" type="button" hidden>Пауза</button>
+          <button id="timer" class="primary" type="button">Начать польский</button>
+        </div>
 
         <dl class="kpis">
           <div><dt>Дота сегодня</dt><dd id="dotaToday" class="num">—</dd></div>

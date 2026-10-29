@@ -6,6 +6,11 @@ export const day = ts => new Date(ts * 1000).toLocaleDateString('sv-SE', { timeZ
 export const warsawHour = ts =>
   Number(new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', hourCycle: 'h23' }).format(ts * 1000));
 
+export const CATEGORIES = ['reading', 'watching', 'course', 'duolingo'];
+
+// seconds studied in a timer session: banked time plus the running stretch (start is null while paused)
+export const elapsed = (t, now) => t.accum + (t.start ? now - t.start : 0);
+
 export const sum = (entries, kind) => entries.filter(e => e.kind === kind).reduce((s, e) => s + e.minutes, 0);
 
 // > 0: owe Polish minutes, < 0: banked credit

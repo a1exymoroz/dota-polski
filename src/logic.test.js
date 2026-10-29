@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeDebt, computeStreak, todayTotals, day } from './logic.js';
+import { computeDebt, computeStreak, todayTotals, day, elapsed } from './logic.js';
+
+test('timer elapsed counts banked time plus the running stretch', () => {
+  assert.equal(elapsed({ start: 1000, accum: 0 }, 1600), 600);
+  assert.equal(elapsed({ start: null, accum: 300 }, 9999), 300);   // paused: frozen
+  assert.equal(elapsed({ start: 2000, accum: 300 }, 2100), 400);   // resumed
+});
 
 const D = 86400;
 const now = Date.UTC(2026, 9, 24, 12) / 1000; // 24 Oct 14:00 Warsaw

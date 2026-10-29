@@ -1,5 +1,5 @@
 import { buildPushHTTPRequest } from '@pushforge/builder';
-import { computeDebt, computeStreak, todayTotals, day, warsawHour, sum } from './logic.js';
+import { computeDebt, computeStreak, todayTotals, day, warsawHour, sum, elapsed, CATEGORIES } from './logic.js';
 
 const json = (data, status = 200) => Response.json(data, { status });
 const nowTs = () => Math.floor(Date.now() / 1000);
@@ -13,6 +13,14 @@ const getState = async (env, key) =>
 const setState = (env, key, value) =>
   env.DB.prepare('INSERT OR REPLACE INTO state (key, value) VALUES (?, ?)').bind(key, value).run();
 const delState = (env, key) => env.DB.prepare('DELETE FROM state WHERE key = ?').bind(key).run();
+
+// { began, start (null while paused), accum (seconds), cat } or null; reads the pre-pause 'timer_start' key too
+async function getTimer(env) {
+  const t = await getState(env, 'timer');
+  if (t) return JSON.parse(t);
+  const old = Number(await getState(env, 'timer_start'));
+  return old ? { began: old, start: old, accum: 0, cat: null } : null;
+}
 
 // shortcut: loads every entry on each call, fine for one person for years; add a SUM query if it ever gets slow
 const allEntries = async env =>
@@ -81,7 +89,7 @@ async function api(req, env, path) {
       debt: computeDebt(entries),
       ...todayTotals(entries, now),
       streak: computeStreak(entries, now),
-      timerStart: Number(await getState(env, 'timer_start')) || null,
+      timer: await getTimer(env),
       debtLimit: Number(env.DEBT_LIMIT),
       steamId: env.STEAM_ID,
       startTs: Number(env.START_TS),
@@ -93,18 +101,26 @@ async function api(req, env, path) {
   }
   if (route === 'POST /api/sync') return json({ added: await syncMatches(env) });
   if (route === 'POST /api/matches') return json({ added: await insertMatches(env, await req.json()) });
-  if (route === 'POST /api/timer/start') {
-    // OR IGNORE: a second tap doesn't reset a running timer
-    await env.DB.prepare("INSERT OR IGNORE INTO state (key, value) VALUES ('timer_start', ?)").bind(String(now)).run();
-    return json({ ok: true });
-  }
-  if (route === 'POST /api/timer/stop') {
-    const start = Number(await getState(env, 'timer_start'));
-    if (!start) return json({ error: 'timer not running' }, 400);
-    await env.DB.batch([
-      env.DB.prepare("INSERT INTO entries (kind, start_ts, minutes) VALUES ('study', ?, ?)").bind(start, (now - start) / 60),
-      env.DB.prepare("DELETE FROM state WHERE key = 'timer_start'"),
-    ]);
+  if (route.startsWith('POST /api/timer/')) {
+    const t = await getTimer(env);
+    const action = path.slice('/api/timer/'.length);
+    if (action === 'start') {
+      if (t) return json({ ok: true }); // a second tap doesn't reset a running session
+      const { category } = await req.json().catch(() => ({}));
+      if (!CATEGORIES.includes(category)) return json({ error: `category: ${CATEGORIES.join(', ')}` }, 400);
+      await setState(env, 'timer', JSON.stringify({ began: now, start: now, accum: 0, cat: category }));
+      return json({ ok: true });
+    }
+    if (!t) return json({ error: 'timer not running' }, 400);
+    if (action === 'pause' && t.start) await setState(env, 'timer', JSON.stringify({ ...t, accum: elapsed(t, now), start: null }));
+    else if (action === 'resume' && !t.start) await setState(env, 'timer', JSON.stringify({ ...t, start: now }));
+    else if (action === 'stop') {
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO entries (kind, start_ts, minutes, note) VALUES ('study', ?, ?, ?)")
+          .bind(t.began, elapsed(t, now) / 60, t.cat),
+        env.DB.prepare("DELETE FROM state WHERE key IN ('timer', 'timer_start')"),
+      ]);
+    } else if (!['pause', 'resume'].includes(action)) return json({ error: 'not found' }, 404);
     return json({ ok: true });
   }
   if (route === 'POST /api/dota/manual') {

@@ -28,6 +28,7 @@ const fmt = m => {
 const clock = s => [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(n => String(n).padStart(2, '0')).join(':'); // taste-skill-ignore: a clock
 const days = n => `${n} ${{ one: 'день', few: 'дня' }[new Intl.PluralRules('ru').select(n)] ?? 'дней'}`;
 const dateFmt = new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const CAT = { reading: 'Чтение', watching: 'Сериал или фильм', course: 'Курс', duolingo: 'Duolingo' };
 const X_ICON = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 
 function render() {
@@ -49,14 +50,16 @@ function render() {
 
   // timer runs from the server-stored start, so closing the app doesn't reset it
   clearInterval(tick);
-  const running = !!s.timerStart;
-  $('timer').textContent = running ? 'Закончить занятие' : 'Начать польский';
-  $('timer').classList.toggle('running', running);
-  $('elapsed').hidden = !running;
-  if (running) {
-    const update = () => ($('elapsed').textContent = clock(Math.max(0, Math.floor(Date.now() / 1000) - s.timerStart)));
+  const t = s.timer;
+  $('cats').hidden = !!t;
+  $('session').hidden = $('pause').hidden = !t;
+  $('timer').textContent = t ? 'Закончить' : 'Начать польский';
+  if (t) {
+    $('sessionCat').textContent = (CAT[t.cat] ?? 'Польский') + (t.start ? '' : ' · пауза');
+    $('pause').textContent = t.start ? 'Пауза' : 'Продолжить';
+    const update = () => ($('elapsed').textContent = clock(Math.max(0, t.accum + (t.start ? Math.floor(Date.now() / 1000) - t.start : 0))));
     update();
-    tick = setInterval(update, 1000);
+    if (t.start) tick = setInterval(update, 1000);
   }
 
   $('empty').hidden = s.recent.length > 0;
@@ -64,7 +67,7 @@ function render() {
     const li = document.createElement('li');
     const study = e.kind === 'study';
     li.innerHTML = `<div class="what"><b></b><small class="num"></small></div><span class="amount num"></span><button class="del" type="button" aria-label="Удалить запись">${X_ICON}</button>`;
-    li.querySelector('b').textContent = study ? 'Польский' : e.match_id ? 'Матч' : 'Дота вручную';
+    li.querySelector('b').textContent = study ? `Польский${CAT[e.note] ? ` · ${CAT[e.note]}` : ''}` : e.match_id ? 'Матч' : 'Дота вручную';
     li.querySelector('small').textContent = dateFmt.format(e.start_ts * 1000);
     const amount = li.querySelector('.amount');
     amount.textContent = `${study ? '−' : '+'}${fmt(e.minutes)}`;
@@ -86,7 +89,15 @@ async function act(fn) {
   }
 }
 
-$('timer').onclick = () => act(() => api(status?.timerStart ? '/api/timer/stop' : '/api/timer/start', 'POST'));
+$('timer').onclick = () => act(() => {
+  if (status?.timer) return api('/api/timer/stop', 'POST');
+  const category = document.querySelector('input[name=cat]:checked').value;
+  localStorage.setItem('cat', category);
+  return api('/api/timer/start', 'POST', { category });
+});
+$('pause').onclick = () => act(() => api(`/api/timer/${status.timer.start ? 'pause' : 'resume'}`, 'POST'));
+// preselect the last category used
+document.querySelector(`input[name=cat][value="${localStorage.getItem('cat')}"]`)?.click();
 // fetched from the phone: its own IP has OpenDota quota, Cloudflare's shared IPs often don't
 async function syncFromPhone() {
   const { steamId, syncDays } = status ?? (await api('/api/status'));
