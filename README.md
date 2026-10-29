@@ -26,7 +26,7 @@ npx @pushforge/builder vapid              # public key -> VAPID_PUBLIC in public
 npx wrangler secret put API_TOKEN         # any long random password
 npx wrangler secret put STEAM_ID
 npx wrangler secret put VAPID_PRIVATE     # private JWK from the vapid command, on one line
-npx wrangler deploy
+npm run deploy                            # stamps ?v= on style.css/app.js, then wrangler deploy
 ```
 
 Matches before `START_TS` (unix time in `wrangler.toml`) are ignored.
