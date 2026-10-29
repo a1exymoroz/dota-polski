@@ -123,6 +123,10 @@ $('push').onclick = () => act(async () => {
 });
 
 navigator.serviceWorker?.register('/sw.js');
+// iOS exposes push only to the home-screen app; in Safari show how to get there instead of a dead button
+const canPush = 'PushManager' in window;
+$('push').hidden = !canPush;
+$('pushHint').hidden = canPush;
 // OpenDota being down shouldn't block the screen
 const openSync = () => localStorage.getItem('token') && act(() => syncFromPhone().catch(() => {}));
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && openSync());

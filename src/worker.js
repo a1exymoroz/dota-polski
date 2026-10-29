@@ -114,6 +114,7 @@ async function api(req, env, path) {
     if (!t) return json({ error: 'timer not running' }, 400);
     if (action === 'pause' && t.start) await setState(env, 'timer', JSON.stringify({ ...t, accum: elapsed(t, now), start: null }));
     else if (action === 'resume' && !t.start) await setState(env, 'timer', JSON.stringify({ ...t, start: now }));
+    else if (action === 'stop' && elapsed(t, now) < 60) await delState(env, 'timer'); // an accidental start/stop isn't a session
     else if (action === 'stop') {
       await env.DB.batch([
         env.DB.prepare("INSERT INTO entries (kind, start_ts, minutes, note) VALUES ('study', ?, ?, ?)")

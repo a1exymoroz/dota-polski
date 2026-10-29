@@ -129,3 +129,5 @@ main { padding: 8px var(--pad) calc(32px + env(safe-area-inset-bottom)); max-wid
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+.hint { font-size: 12px; line-height: 16px; }
+@media (min-width: 900px) { .hint { grid-column: 2; } }
