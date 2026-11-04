@@ -29,12 +29,13 @@ const allEntries = async env =>
 // OpenDota's `date` = days back; cover everything since START_TS so missed days are caught up
 const daysSinceStart = env => Math.ceil((nowTs() - Number(env.START_TS)) / 86400) + 1;
 
+// significant=0: OpenDota hides Turbo and other "insignificant" modes by default
 async function syncMatches(env) {
   const base = `https://api.opendota.com/api/players/${env.STEAM_ID}`;
   // asks OpenDota to pull fresh history; new matches show up on a later run
   const headers = { 'User-Agent': 'dota-polski (+https://github.com/a1exymoroz/dota-polski)' };
   await fetch(`${base}/refresh`, { method: 'POST', headers }).catch(() => {});
-  const r = await fetch(`${base}/matches?date=${daysSinceStart(env)}`, { headers });
+  const r = await fetch(`${base}/matches?date=${daysSinceStart(env)}&significant=0`, { headers });
   if (!r.ok) throw new Error(`OpenDota ${r.status}: ${(await r.text()).slice(0, 200)}`);
   return insertMatches(env, await r.json());
 }

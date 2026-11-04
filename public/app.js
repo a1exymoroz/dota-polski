@@ -101,7 +101,7 @@ document.querySelector(`input[name=cat][value="${localStorage.getItem('cat')}"]`
 // fetched from the phone: its own IP has OpenDota quota, Cloudflare's shared IPs often don't
 async function syncFromPhone() {
   const { steamId, syncDays } = status ?? (await api('/api/status'));
-  const r = await fetch(`https://api.opendota.com/api/players/${steamId}/matches?date=${syncDays}`);
+  const r = await fetch(`https://api.opendota.com/api/players/${steamId}/matches?date=${syncDays}&significant=0`);
   if (!r.ok) throw new Error(`OpenDota ${r.status}`);
   await api('/api/matches', 'POST', await r.json());
 }
