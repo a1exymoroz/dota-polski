@@ -70,6 +70,16 @@
             <button id="manual" class="ghost" type="button">Добавить доту</button>
           </div>
         </div>
+        <fieldset class="cats views">
+          <legend class="sr">Вид журнала</legend>
+          <label><input type="radio" name="view" value="list" checked><span>Список</span></label>
+          <label><input type="radio" name="view" value="calendar"><span>Календарь</span></label>
+        </fieldset>
+        <div id="calendar" hidden>
+          <div class="cal-scroll"><div id="calGrid" class="cal-grid"></div></div>
+          <p id="calInfo" class="cal-info num" aria-live="polite"></p>
+          <p class="muted cal-legend">📖 чтение · 🎬 сериал · 🎓 курс · 🦉 <span translate="no">Duolingo</span> · 🎮 только дота</p>
+        </div>
         <ul id="recent"></ul>
         <p id="empty" class="muted empty" hidden>Пока пусто: сыграй матч или начни занятие.</p>
       </section>

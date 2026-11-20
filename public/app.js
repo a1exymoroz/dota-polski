@@ -62,7 +62,7 @@ function render() {
     if (t.start) tick = setInterval(update, 1000);
   }
 
-  $('empty').hidden = s.recent.length > 0;
+  $('empty').hidden = s.recent.length > 0 || !$('calendar').hidden;
   $('recent').replaceChildren(...s.recent.map(e => {
     const li = document.createElement('li');
     const study = e.kind === 'study';
@@ -75,7 +75,79 @@ function render() {
     li.querySelector('button').onclick = () => confirm('Удалить запись?') && act(() => api(`/api/entries/${e.id}`, 'DELETE'));
     return li;
   }));
+  renderCalendar(s);
 }
+
+const EMOJI = { reading: '📖', watching: '🎬', course: '🎓', duolingo: '🦉' };
+const warsawDay = date => date.toLocaleDateString('sv-SE', { timeZone: 'Europe/Warsaw' });
+const dayFmt = new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'short', weekday: 'short', timeZone: 'UTC' });
+
+// [emoji, label, minutes] per category, biggest first; study without a category predates categories
+function dayParts(day) {
+  const parts = Object.entries(day.cats).map(([c, m]) => [EMOJI[c] ?? '✏️', CAT[c] ?? c, m]);
+  const rest = day.study - parts.reduce((t, p) => t + p[2], 0);
+  if (rest >= 0.5) parts.push(['✏️', 'Польский', rest]);
+  return parts.sort((x, y) => y[2] - x[2]);
+}
+let calPick = null; // tapped day, 'YYYY-MM-DD'; today until one is tapped
+
+// from the Monday of the start week to today; date keys are walked as UTC midnights
+function renderCalendar(s) {
+  const today = warsawDay(new Date());
+  calPick ??= today;
+  const d = new Date(`${warsawDay(new Date(s.startTs * 1000))}T00:00Z`);
+  d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7);
+  let pickSaved = null;
+  const cells = ['Пн', '', 'Ср', '', 'Пт', '', ''].map(t => Object.assign(document.createElement('span'), { className: 'wd', textContent: t, ariaHidden: 'true' }));
+  for (; d.toISOString().slice(0, 10) <= today; d.setUTCDate(d.getUTCDate() + 1)) {
+    const key = d.toISOString().slice(0, 10);
+    const day = s.calendar[key];
+    const parts = day ? dayParts(day) : [];
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'cal-day';
+    if (day?.study) cell.classList.add('studied');
+    if (day && day.dota > day.study) cell.classList.add('owed');
+    if (key === today) cell.classList.add('today');
+    // several categories in a day overlap, the biggest on top
+    const marks = parts.length ? parts.map(p => p[0]) : day?.dota ? ['🎮'] : [];
+    cell.classList.toggle('multi', marks.length > 1);
+    // fanned diagonally from the centre so up to four still fit in the cell
+    const step = Math.min(7, 12 / (marks.length - 1));
+    cell.replaceChildren(...marks.map((m, i) => {
+      const o = (i - (marks.length - 1) / 2) * step;
+      return Object.assign(document.createElement('span'), { textContent: m, style: `z-index: ${marks.length - i}; transform: translate(${o}px, ${o}px)` });
+    }));
+    const info = `${dayFmt.format(d)} · ` + (day
+      ? [...parts.map(([e, l, m]) => `${e} ${l} ${fmt(m)}`), day.dota && `🎮 Дота ${fmt(day.dota)}`].filter(Boolean).join(' · ')
+      : 'ничего');
+    cell.ariaLabel = info;
+    const pick = () => {
+      calPick = key;
+      $('calGrid').querySelectorAll('[aria-pressed=true]').forEach(c => c.ariaPressed = 'false');
+      cell.ariaPressed = 'true';
+      $('calInfo').textContent = info;
+    };
+    cell.onclick = pick;
+    cell.ariaPressed = 'false';
+    cells.push(cell);
+    if (key === calPick) pickSaved = pick;
+  }
+  $('calGrid').replaceChildren(...cells);
+  pickSaved?.();
+  $('calGrid').parentElement.scrollLeft = 1e6; // newest week in view
+}
+
+// list or calendar, remembered per device
+function setView(v) {
+  const cal = v === 'calendar';
+  $('calendar').hidden = !cal;
+  $('recent').hidden = cal;
+  localStorage.setItem('view', v);
+  if (status) render();
+}
+document.querySelectorAll('input[name=view]').forEach(r => (r.onchange = () => setView(r.value)));
+document.querySelector(`input[name=view][value="${localStorage.getItem('view')}"]`)?.click();
 
 async function act(fn) {
   $('error').hidden = true;

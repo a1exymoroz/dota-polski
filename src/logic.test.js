@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeDebt, computeStreak, todayTotals, day, elapsed } from './logic.js';
+import { computeDebt, computeStreak, todayTotals, dailyTotals, day, elapsed } from './logic.js';
 
 test('timer elapsed counts banked time plus the running stretch', () => {
   assert.equal(elapsed({ start: 1000, accum: 0 }, 1600), 600);
@@ -35,4 +35,13 @@ test('streak counts covered days, skips idle days, tolerates unfinished today', 
   ];
   assert.equal(computeStreak(entries, now), 2);
   assert.equal(computeStreak([...entries, e('study', 0, 50)], now), 3);
+});
+
+test('daily totals group by Warsaw day and split study by category', () => {
+  const days = dailyTotals([
+    e('dota', 0, 40), { ...e('study', 0, 20), note: 'reading' }, { ...e('study', 0, 15), note: 'reading' },
+    { ...e('study', 0, 5), note: 'duolingo' }, e('study', 1, 10),   // old sessions have no category
+  ]);
+  assert.deepEqual(days['2026-10-24'], { dota: 40, study: 40, cats: { reading: 35, duolingo: 5 } });
+  assert.deepEqual(days['2026-10-23'], { dota: 0, study: 10, cats: {} });
 });

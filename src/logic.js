@@ -21,14 +21,21 @@ export function todayTotals(entries, now) {
   return { dotaToday: sum(today, 'dota'), studyToday: sum(today, 'study') };
 }
 
+// { 'YYYY-MM-DD': { dota, study, cats: { reading: minutes, ... } } } for the calendar and the streak
+export function dailyTotals(entries) {
+  const days = {};
+  for (const e of entries) {
+    const d = (days[day(e.start_ts)] ??= { dota: 0, study: 0, cats: {} });
+    d[e.kind] += e.minutes;
+    if (e.kind === 'study' && e.note) d.cats[e.note] = (d.cats[e.note] ?? 0) + e.minutes;
+  }
+  return days;
+}
+
 // Consecutive active days (newest first) where study >= dota. Idle days are skipped;
 // today doesn't break the streak while it's still in progress.
 export function computeStreak(entries, now) {
-  const days = {};
-  for (const e of entries) {
-    const d = (days[day(e.start_ts)] ??= { dota: 0, study: 0 });
-    d[e.kind] += e.minutes;
-  }
+  const days = dailyTotals(entries);
   const today = day(now);
   let streak = 0;
   for (const d of Object.keys(days).sort().reverse()) {

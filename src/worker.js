@@ -1,5 +1,5 @@
 import { buildPushHTTPRequest } from '@pushforge/builder';
-import { computeDebt, computeStreak, todayTotals, day, warsawHour, sum, elapsed, CATEGORIES } from './logic.js';
+import { computeDebt, computeStreak, todayTotals, dailyTotals, day, warsawHour, sum, elapsed, CATEGORIES } from './logic.js';
 
 const json = (data, status = 200) => Response.json(data, { status });
 const nowTs = () => Math.floor(Date.now() / 1000);
@@ -98,6 +98,7 @@ async function api(req, env, path) {
       dotaTotal: sum(entries, 'dota'),
       studyTotal: sum(entries, 'study'),
       recent: entries.slice(0, 20),
+      calendar: dailyTotals(entries),
     });
   }
   if (route === 'POST /api/sync') return json({ added: await syncMatches(env) });
